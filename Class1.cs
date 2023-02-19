@@ -192,6 +192,8 @@ namespace RSaga3Mod
                     Type staticClassInfo = typeof(DataTable);
                     var staticClassConstructorInfo = staticClassInfo.TypeInitializer;
                     staticClassConstructorInfo.Invoke(null, null);
+
+                    RandomExtensions.ParamaterShuffle(Randomizer.rng, PlayerWorkDefaultDataTable.PlayerWorkDefaultTable, 32);
                 }
                 try
                 {
@@ -458,9 +460,9 @@ namespace RSaga3Mod
                 array[k1, k2] = temp;
             }
         }
-        public static void Shuffle<T>(System.Random rng, T[] array)
+        public static void Shuffle<T>(System.Random rng, T[] array, int max=-1)
         {
-            int n = array.Length;
+            int n = max >= 0 ? max : array.Length;
             while (n > 1)
             {
                 int k = rng.Next(n--);
@@ -487,6 +489,137 @@ namespace RSaga3Mod
             {
                 names[i] = names2[dict[i]];
             }
+        }
+
+        public static void ParameterAssign(PlayerWorkDefault[] array, int a, PlayerWorkDefault b, int select=0)
+        {
+            if (select == 0)
+                array[a]._strength = b._strength;
+            if (select == 1)
+                array[a]._dexterity = b._dexterity;
+            if (select == 2)
+                array[a]._agility = b._agility;
+            if (select == 3)
+                array[a]._endure = b._endure;
+            if (select == 4)
+                array[a]._force = b._force;
+            if (select == 5)
+                array[a]._will = b._will;
+            if (select == 6)
+                array[a]._fascination = b._fascination;
+            else
+            {
+                array[a]._number = b._number;
+                array[a]._name = b._name;
+                array[a]._id = b._id;
+                array[a]._id_name = b._id_name;
+                array[a]._sex = b._sex;
+                array[a]._slayer = b._slayer;
+                array[a]._destiny_star = b._destiny_star;
+                array[a]._destiny_star_name = b._destiny_star_name;
+                array[a]._strong_point = b._strong_point;
+                array[a]._strong_point_name = b._strong_point_name;
+                array[a]._guardian = b._guardian;
+                array[a]._guardian_name = b._guardian_name;
+                array[a]._grade = b._grade;
+                array[a]._hirameki = b._hirameki;
+                array[a]._class = b._class;
+                array[a]._hp = b._hp;
+                array[a]._lp = b._lp;
+                array[a]._slash = b._slash;
+                array[a]._beat = b._beat;
+                array[a]._thrust = b._thrust;
+                array[a]._shoot = b._shoot;
+                array[a]._wrestle = b._wrestle;
+                array[a]._souryu = b._souryu;
+                array[a]._syuchoh = b._syuchoh;
+                array[a]._byakko = b._byakko;
+                array[a]._genbu = b._genbu;
+                array[a]._sun = b._sun;
+                array[a]._moon = b._moon;
+                array[a]._hp_up = b._hp_up;
+                array[a]._lp_up = b._lp_up;
+                array[a]._strength_up = b._strength_up;
+                array[a]._dexterity_up = b._dexterity_up;
+                array[a]._agility_up = b._agility_up;
+                array[a]._endure_up = b._endure_up;
+                array[a]._force_up = b._force_up;
+                array[a]._will_up = b._will_up;
+                array[a]._fascination_up = b._fascination_up;
+                array[a]._slash_up = b._slash_up;
+                array[a]._beat_up = b._beat_up;
+                array[a]._thrust_up = b._thrust_up;
+                array[a]._shoot_up = b._shoot_up;
+                array[a]._wrestle_up = b._wrestle_up;
+                array[a]._souryu_up = b._souryu_up;
+                array[a]._syuchoh_up = b._syuchoh_up;
+                array[a]._byakko_up = b._byakko_up;
+                array[a]._genbu_up = b._genbu_up;
+                array[a]._sun_up = b._sun_up;
+                array[a]._moon_up = b._moon_up;
+                array[a]._form_own = b._form_own;
+                array[a]._form_own_name = b._form_own_name;
+                array[a]._weapon0 = b._weapon0;
+                array[a]._weapon0_name = b._weapon0_name;
+                array[a]._weapon1 = b._weapon1;
+                array[a]._weapon1_name = b._weapon1_name;
+                array[a]._weapon2 = b._weapon2;
+                array[a]._weapon2_name = b._weapon2_name;
+                array[a]._weapon3 = b._weapon3;
+                array[a]._weapon3_name = b._weapon3_name;
+                array[a]._armor0 = b._armor0;
+                array[a]._armor0_name = b._armor0_name;
+                array[a]._armor1 = b._armor1;
+                array[a]._armor1_name = b._armor1_name;
+                array[a]._armor2 = b._armor2;
+                array[a]._armor2_name = b._armor2_name;
+                array[a]._armor3 = b._armor3;
+                array[a]._armor3_name = b._armor3_name;
+                array[a]._fix_armor = b._fix_armor;
+                array[a]._fix_armor_name = b._fix_armor_name;
+                array[a]._waza0 = b._waza0;
+                array[a]._waza0_name = b._waza0_name;
+                array[a]._waza1 = b._waza1;
+                array[a]._waza1_name = b._waza1_name;
+                array[a]._waza2 = b._waza2;
+                array[a]._waza2_name = b._waza2_name;
+                array[a]._jyutu0 = b._jyutu0;
+                array[a]._jyutu0_name = b._jyutu0_name;
+                array[a]._jyutu1 = b._jyutu1;
+                array[a]._jyutu1_name = b._jyutu1_name;
+                array[a]._jyutu2 = b._jyutu2;
+                array[a]._jyutu2_name = b._jyutu2_name;
+                array[a]._jyutu3 = b._jyutu3;
+                array[a]._jyutu3_name = b._jyutu3_name;
+                array[a]._jyutu4 = b._jyutu4;
+                array[a]._jyutu4_name = b._jyutu4_name;
+                array[a]._jyutu5 = b._jyutu5;
+                array[a]._jyutu5_name = b._jyutu5_name;
+                array[a]._cursor_def_page = b._cursor_def_page;
+            }
+        }
+
+        public static void ParamaterShuffle(System.Random rng, PlayerWorkDefault[] array, int max=-1)
+        {
+            int n = max >= 0 ? max : array.Length;
+            for (int i = -1; i < 7; i++)
+            {
+                n = max >= 0 ? max : array.Length;
+                while (n > 1)
+                {
+                    int k = rng.Next(n--);
+                    PlayerWorkDefault temp = array[n];
+
+                    ParameterAssign(array, n, array[k],i);
+                    ParameterAssign(array, k, temp,i);
+                }
+            }
+            for (int j = 33; j < 41; j++)
+            {
+                GameCore.m_playerWork[j] = GameCore.m_playerWork[18];
+            }
+            //for (int i = 0; i < n; i++)
+            //    PlayerWork.Init(i, GameCore.m_playerWork);
         }
 
         public static void MoveAssign(DataStruct.Enemy.monster_base_data[] array, Dictionary<int, int> dict)
@@ -719,6 +852,32 @@ namespace RSaga3Mod
                 }
             }
             return;
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerCleate), "_SetPlayerParam")]
+    public class StartParamRandomizer
+    {
+        public static void Postfix()
+        {
+            PartyWork partyWork = GameCore.m_partyWork;
+            int num = partyWork._tsuikajun[0];
+            PlayerWork playerWork = GameCore.m_playerWork[num];
+
+            playerWork._hp += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._hp - PlayerCleateBaseStatusData.status[num]._hp;
+            playerWork._lp += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._lp - PlayerCleateBaseStatusData.status[num]._lp;
+            playerWork._strength += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._strength - PlayerCleateBaseStatusData.status[num]._strength;
+            playerWork._dexterity += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._dexterity - PlayerCleateBaseStatusData.status[num]._dexterity;
+            playerWork._agility += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._agility - PlayerCleateBaseStatusData.status[num]._agility;
+            playerWork._endure += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._endure - PlayerCleateBaseStatusData.status[num]._endure;
+            playerWork._force += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._force - PlayerCleateBaseStatusData.status[num]._force;
+            playerWork._will += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._will - PlayerCleateBaseStatusData.status[num]._will;
+            playerWork._fascination += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._fascination - PlayerCleateBaseStatusData.status[num]._fascination;
+            playerWork._slash += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._slash - PlayerCleateBaseStatusData.status[num]._slash;
+            playerWork._beat += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._beat - PlayerCleateBaseStatusData.status[num]._beat;
+            playerWork._thrust += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._thrust - PlayerCleateBaseStatusData.status[num]._thrust;
+            playerWork._shoot += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._shoot - PlayerCleateBaseStatusData.status[num]._shoot;
+            playerWork._wrestle += PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[num]._wrestle - PlayerCleateBaseStatusData.status[num]._wrestle;
         }
     }
 
