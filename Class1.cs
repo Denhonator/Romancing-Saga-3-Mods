@@ -5,6 +5,7 @@ using HarmonyLib.Tools;
 using DataStruct.Encount;
 using System.IO;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace RSaga3Mod
 {
@@ -182,6 +183,12 @@ namespace RSaga3Mod
             if (GUI.Button(new Rect(108, 128, 96f, 32f), "+"))
             {
                 slotselect = Mathf.Min(slotselect + 1, 5);
+            }
+            if (GUI.Button(new Rect(108, 240, 96f, 32f), "look test"))
+            {
+                int looks1 = GameCore.m_scriptDrive.NpcNameToPicNumber(PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[int.Parse(Randomizer.seed)]._name);
+                Character.m_pic_no_tbl[7] = (byte)looks1;
+                Character.m_pic_d[7*4+3] = (byte)looks1;
             }
             GUI.Label(new Rect(8, 340, 200f, 64f), message);
             Randomizer.seed = GUI.TextField(new Rect(8, 260, 96f, 32f), Randomizer.seed);
@@ -510,7 +517,7 @@ namespace RSaga3Mod
             else
             {
                 array[a]._number = b._number;
-                array[a]._name = b._name;
+                //array[a]._name = b._name;
                 array[a]._id = b._id;
                 array[a]._id_name = b._id_name;
                 array[a]._sex = b._sex;
@@ -610,13 +617,27 @@ namespace RSaga3Mod
                     int k = rng.Next(n--);
                     PlayerWorkDefault temp = array[n];
 
-                    ParameterAssign(array, n, array[k],i);
-                    ParameterAssign(array, k, temp,i);
+                    ParameterAssign(array, n, array[k], i);
+                    ParameterAssign(array, k, temp, i);
                 }
             }
+            n = max >= 0 ? max : array.Length;
+            byte[] mpicopy = new byte[Character.m_pic_no_tbl.Length];
+            Array.Copy(Character.m_pic_no_tbl, mpicopy, mpicopy.Length);
+
+            for (int i = 0; i < n; i++)
+            {
+                int looks1 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[i]._name);
+                int looks2 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[array[i]._number]._name);
+
+                Character.m_pic_no_tbl[looks1] = mpicopy[looks2];
+                Character.m_pic_d[looks1 * 4 + 3] = mpicopy[looks2];
+            }
+            Character.m_pic_no_tbl[7] = Character.m_pic_no_tbl[108];
+            Character.m_pic_d[7 * 4 + 3] = Character.m_pic_no_tbl[108];
             for (int j = 33; j < 41; j++)
             {
-                GameCore.m_playerWork[j] = GameCore.m_playerWork[18];
+                array[j] = array[18];
             }
             //for (int i = 0; i < n; i++)
             //    PlayerWork.Init(i, GameCore.m_playerWork);
@@ -819,6 +840,72 @@ namespace RSaga3Mod
     //    }
     //}
 
+    //[HarmonyPatch(MethodType.Constructor)]
+    //public class ShopRandomizer
+    //{
+    //    static Type t;
+    //    public static MethodBase TargetMethod()
+    //    {
+    //        t = AccessTools.TypeByName("ShopData");
+    //        ConstructorInfo ci = t.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, new ParameterModifier[0]);
+    //        return ci;
+    //    }
+    //    public static void Postfix()
+    //    {
+    //        GUIButtons.message = "Found it!\n";
+    //        //FieldInfo instance = t.GetField("ms_instance", BindingFlags.Static | BindingFlags.NonPublic);
+    //        Traverse instance = Traverse.Create(t).Field("ms_instance");
+    //        var obj = instance.GetValue();
+    //        GUIButtons.message += "hmm";
+    //    }
+    //}
+
+    [HarmonyPatch(typeof(MenuShopItemList), "Initialize")]
+    public class ShopRandomizer
+    {
+        public static void Prefix(ref MenuShopItemList __instance)
+        {
+            var mid = __instance.GetType().GetField("m_type", BindingFlags.NonPublic | BindingFlags.Instance);
+            MENU_ID? menu_id = mid.GetValue(__instance) as MENU_ID?;
+            if (Randomizer.randomized && menu_id != null && menu_id == MENU_ID.SHOP_ITEM_BUY_LIST) 
+            { 
+                var prop = __instance.GetType().GetField("m_syurui", BindingFlags.NonPublic | BindingFlags.Instance);
+                int[] items = prop.GetValue(__instance) as int[];
+                for(int i = 0; i < items.Length; i++){
+                    items[i] = Randomizer.shopDict[items[i]];
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(MenuShopArtList), "SetProductTable")]
+    public class ShopRandomizerArts
+    {
+        public static void Prefix(ref int ___m_partyIdx, ref int __state)
+        {
+            if (Randomizer.randomized)
+            {
+                __state = ___m_partyIdx;
+                ___m_partyIdx = 10000;
+            }
+        }
+        public static void Postfix(ref MenuShopArtList __instance, ref int ___m_partyIdx, ref int __state)
+        {
+            var mid = __instance.GetType().GetField("m_type", BindingFlags.NonPublic | BindingFlags.Instance);
+            MENU_ID? menu_id = mid.GetValue(__instance) as MENU_ID?;
+            if (Randomizer.randomized && menu_id != null && (menu_id == MENU_ID.SHOP_ART_BUY_LIST || menu_id == MENU_ID.STRONG_ART_BUY_LIST))
+            {
+                var prop = __instance.GetType().GetField("m_productTable", BindingFlags.NonPublic | BindingFlags.Instance);
+                int[] items = prop.GetValue(__instance) as int[];
+                for (int i = 0; i < items.Length; i++)
+                {
+                    items[i] = Randomizer.artsDict.ContainsKey(items[i]) ? Randomizer.artsDict[items[i]] : items[items[i]];
+                }
+                ___m_partyIdx = __state;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(Monster), "Load")]
     public class AssetSwap
     {
@@ -855,6 +942,15 @@ namespace RSaga3Mod
         }
     }
 
+    //[HarmonyPatch(typeof(Character), "Init")]
+    //public class CharacterSpriteSwap
+    //{
+    //    public static void Prefix()
+    //    {
+            
+    //    }
+    //}
+
     [HarmonyPatch(typeof(PlayerCleate), "_SetPlayerParam")]
     public class StartParamRandomizer
     {
@@ -885,6 +981,8 @@ namespace RSaga3Mod
     public class Randomizer
     {
         public static Dictionary<int, int> monsterDict = new Dictionary<int, int>();
+        public static Dictionary<int, int> shopDict = new Dictionary<int, int>();
+        public static Dictionary<int, int> artsDict = new Dictionary<int, int>();
         public static bool randomized = false;
         public static string seed = "0";
         public static System.Random rng;
@@ -904,6 +1002,30 @@ namespace RSaga3Mod
                 int k = monsters[r];
                 monsterDict.Add(monsters2[i], k);
                 monsters.RemoveAt(r);
+            }
+            List<int> items = new List<int>();
+            for (int i = 0; i < 255; i++)
+            {
+                items.Add(i);
+            }
+            for (int i = 0; i < 255; i++)
+            {
+                int r = rng.Next(items.Count);
+                int k = items[r];
+                shopDict.Add(i, k);
+                items.RemoveAt(r);
+            }
+            List<int> arts = new List<int>();
+            for (int i = 170; i < 216; i++)
+            {
+                arts.Add(i);
+            }
+            for (int i = 170; i < 216; i++)
+            {
+                int r = rng.Next(arts.Count);
+                int k = arts[r];
+                artsDict.Add(i, k);
+                arts.RemoveAt(r);
             }
             RandomExtensions.MoveAssign(DataTable.monster_base_data_table, monsterDict);
             //RandomExtensions.Assign(DataTable.enemy_name_table, monsterDict);
