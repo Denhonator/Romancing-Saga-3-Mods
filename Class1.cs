@@ -161,6 +161,7 @@ namespace RSaga3Mod
         static int charselect = 0;
         static int slotselect = 0;
         public static string message = "";
+        public static bool skillRando = true;
         public static void Postfix()
         {
             GUI.Label(new Rect(8, 70, 96f, 32f), charselect.ToString() + ": " + PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[charselect]._name);
@@ -184,7 +185,7 @@ namespace RSaga3Mod
             {
                 slotselect = Mathf.Min(slotselect + 1, 5);
             }
-            if (GUI.Button(new Rect(108, 240, 96f, 32f), "look test"))
+            if (GUI.Button(new Rect(108, 260, 96f, 32f), "look test"))
             {
                 int looks1 = GameCore.m_scriptDrive.NpcNameToPicNumber(PlayerWorkDefaultDataTable.PlayerWorkDefaultTable[int.Parse(Randomizer.seed)]._name);
                 Character.m_pic_no_tbl[7] = (byte)looks1;
@@ -192,6 +193,7 @@ namespace RSaga3Mod
             }
             GUI.Label(new Rect(8, 340, 200f, 64f), message);
             Randomizer.seed = GUI.TextField(new Rect(8, 260, 96f, 32f), Randomizer.seed);
+            skillRando = GUI.Toggle(new Rect(8, 340, 96f, 32f), skillRando, "Skills");
             if(GUI.Button(new Rect(8, 300, 96f, 32f), "Randomize"))
             {
                 if (!Randomizer.randomized)
@@ -483,9 +485,129 @@ namespace RSaga3Mod
         {
             T[] array2 = new T[array.Length];
             Array.Copy(array, array2, array.Length);
-            for(int i = 0; i < array.Length; i++)
+            foreach (int i in dict.Keys)
             {
                 array[i] = array2[dict[i]];
+            }
+        }
+
+        public static void PriceAssign(DataStruct.Item.item_basic_data[] array, Dictionary<int, int> dict)
+        {
+            DataStruct.Item.item_basic_data[] array2 = new DataStruct.Item.item_basic_data[array.Length];
+            Array.Copy(array, array2, array.Length);
+            foreach (int i in dict.Keys)
+            {
+                array[dict[i]]._price = array2[i]._price;
+            }
+        }
+
+        public static void SparkAssign(DataStruct.Skill.skill_hirameki_hasei_data[] array, Dictionary<int, int> dict)
+        {
+            DataStruct.Skill.skill_hirameki_hasei_data[] array2 = new DataStruct.Skill.skill_hirameki_hasei_data[array.Length];
+            DataStruct.Skill.skill_player[] skp = new DataStruct.Skill.skill_player[DataTable.skill_player_table.Length];
+            List<CommandSkillData> csdl = new List<CommandSkillData>();
+            foreach(CommandSkillData c in BattleDataList.commandSkillDataList)
+            {
+                csdl.Add(new CommandSkillData(c.id.ToString(), c.costPoint, c.targetFlag.ToString(), c.useWeaponId.ToString(), c.nameJpn, c.nameEng, c.descJpn, c.descEng));
+            }
+            int n = 0;
+            foreach(DataStruct.Skill.skill_player s in DataTable.skill_player_table)
+            {
+                skp[n] = new DataStruct.Skill.skill_player(s._kind_id, s._hit_correction, s._effect_value, s._hit_num, s._skill_grow, s._add_eff, s._slash_contain_flag, s._beat_contain_flag, s._thrust_contain_flag, s._shoot_contain_flag, s._heat_contain_flag, s._cold_contain_flag, s._thunder_contain_flag, s._magic_contain_flag, s._main_target, s._sub_target, s._all_flag, s._two_handed_flag, s._remote_flag, s._shieldchange_flag, s._masic_shield_can_flag, s._dodge_can_flag, s._counter_can_flag, s._shield_dodge_one_flag, s._shield_dodge_half_flag, s._kind_id_attack, s._routine, s._chisou_change_id, s._chisou_change_absolutely_flag, s._weapon_unique_skill_flag, s._got_effect_flag, s._blindnessgot_flag, s._counter_skill_flag, s._act_timing, s._usable_skill_Lv_id, s._usable_execution_level_id, s._use_wp, s._use_jp, s._item_lost);
+                n++;
+            }
+
+            for(int i = 0; i < array.Length; i++)
+            {
+                for(int j = 0; j < 20; j++)
+                {
+                    if (array[i]._skill_hirameki_data[j]._id < 0)
+                        break;
+                    else if (dict.ContainsKey(array[i]._skill_hirameki_data[j]._id))
+                    {
+                        int s1 = array[i]._skill_hirameki_data[j]._id;
+                        int s2 = dict[array[i]._skill_hirameki_data[j]._id];
+                        DataTable.skill_player_table[s2]._usable_skill_Lv_id = skp[s1]._usable_skill_Lv_id;
+                        //DataTable.skill_player_table[s2]._routine = skp[s1]._routine;
+                        BattleDataList.commandSkillDataList[s2].useWeaponId = csdl[s1].useWeaponId;
+                        array[i]._skill_hirameki_data[j]._id = s2;
+                    }
+                }
+            }
+        }
+
+        public static void SkillAssign(DataStruct.Skill.skill_player[] array, Dictionary<int, int> dict)
+        {
+            DataStruct.Skill.skill_player[] array2 = new DataStruct.Skill.skill_player[array.Length];
+            Array.Copy(array, array2, array.Length);
+            foreach (int i in dict.Keys)
+            {
+                //array[i]._kind_id = array2[dict[i]]._kind_id;
+                array[i]._hit_correction = array2[dict[i]]._hit_correction;
+                //array[i]._effect_value = array2[dict[i]]._effect_value;
+                array[i]._hit_num = array2[dict[i]]._hit_num;
+                array[i]._skill_grow = array2[dict[i]]._skill_grow;
+                array[i]._add_eff = array2[dict[i]]._add_eff;
+                array[i]._slash_contain_flag = array2[dict[i]]._slash_contain_flag;
+                array[i]._beat_contain_flag = array2[dict[i]]._beat_contain_flag;
+                array[i]._thrust_contain_flag = array2[dict[i]]._thrust_contain_flag;
+                array[i]._shoot_contain_flag = array2[dict[i]]._shoot_contain_flag;
+                array[i]._heat_contain_flag = array2[dict[i]]._heat_contain_flag;
+                array[i]._cold_contain_flag = array2[dict[i]]._cold_contain_flag;
+                array[i]._thunder_contain_flag = array2[dict[i]]._thunder_contain_flag;
+                array[i]._magic_contain_flag = array2[dict[i]]._magic_contain_flag;
+                //array[i]._main_target = array2[dict[i]]._main_target;
+                //array[i]._sub_target = array2[dict[i]]._sub_target;
+                //array[i]._all_flag = array2[dict[i]]._all_flag;
+                array[i]._two_handed_flag = array2[dict[i]]._two_handed_flag;
+                array[i]._remote_flag = array2[dict[i]]._remote_flag;
+                array[i]._shieldchange_flag = array2[dict[i]]._shieldchange_flag;
+                array[i]._masic_shield_can_flag = array2[dict[i]]._masic_shield_can_flag;
+                array[i]._dodge_can_flag = array2[dict[i]]._dodge_can_flag;
+                array[i]._counter_can_flag = array2[dict[i]]._counter_can_flag;
+                array[i]._shield_dodge_one_flag = array2[dict[i]]._shield_dodge_one_flag;
+                array[i]._shield_dodge_half_flag = array2[dict[i]]._shield_dodge_half_flag;
+                //array[i]._kind_id_attack = array2[dict[i]]._kind_id_attack;
+                array[i]._routine = array2[dict[i]]._routine;
+                array[i]._chisou_change_id = array2[dict[i]]._chisou_change_id;
+                array[i]._chisou_change_absolutely_flag = array2[dict[i]]._chisou_change_absolutely_flag;
+                //array[i]._weapon_unique_skill_flag = array2[dict[i]]._weapon_unique_skill_flag;
+                array[i]._got_effect_flag = array2[dict[i]]._got_effect_flag;
+                array[i]._blindnessgot_flag = array2[dict[i]]._blindnessgot_flag;
+                //array[i]._counter_skill_flag = array2[dict[i]]._counter_skill_flag;
+                array[i]._act_timing = array2[dict[i]]._act_timing;
+                //array[i]._usable_skill_Lv_id = array2[dict[i]]._usable_skill_Lv_id;
+                //array[i]._usable_execution_level_id = array2[dict[i]]._usable_execution_level_id;
+                array[i]._use_wp = array2[dict[i]]._use_wp;
+                array[i]._use_jp = array2[dict[i]]._use_jp;
+                //array[i]._item_lost = array2[dict[i]]._item_lost;
+            }
+        }
+
+        public static void ListAssign<T>(List<T> array, Dictionary<int, int> dict)
+        {
+            List<T> array2 = new List<T>(array);
+            foreach (int i in dict.Keys)
+            {
+                array[i] = array2[dict[i]];
+            }
+        }
+
+        public static void CommandAssign(List<CommandSkillData> array, Dictionary<int, int> dict)
+        {
+            List<CommandSkillData> array2 = new List<CommandSkillData>(array);
+            foreach (int i in dict.Keys)
+            {
+                //array[i] = array2[dict[i]];
+                //array[i].id = array2[dict[i]].id;
+                array[dict[i]].useWeaponId = array2[i].useWeaponId;
+                //array[i].targetFlag = array2[dict[i]].useWeaponId;
+                //array[i].costDescEng = array2[dict[i]].costDescEng;
+                //array[i].costDescJpn = array2[dict[i]].costDescJpn;
+                //array[i].descEng = array2[dict[i]].descEng;
+                //array[i].descJpn = array2[dict[i]].descJpn;
+                //array[i].nameEng = array2[dict[i]].nameEng;
+                //array[i].nameJpn = array2[dict[i]].nameJpn;
             }
         }
 
@@ -502,21 +624,21 @@ namespace RSaga3Mod
         {
             if (select == 0)
                 array[a]._strength = b._strength;
-            if (select == 1)
+            else if (select == 1)
                 array[a]._dexterity = b._dexterity;
-            if (select == 2)
+            else if (select == 2)
                 array[a]._agility = b._agility;
-            if (select == 3)
+            else if (select == 3)
                 array[a]._endure = b._endure;
-            if (select == 4)
+            else if (select == 4)
                 array[a]._force = b._force;
-            if (select == 5)
+            else if (select == 5)
                 array[a]._will = b._will;
-            if (select == 6)
+            else if (select == 6)
                 array[a]._fascination = b._fascination;
             else
             {
-                array[a]._number = b._number;
+                //array[a]._number = b._number;
                 //array[a]._name = b._name;
                 array[a]._id = b._id;
                 array[a]._id_name = b._id_name;
@@ -608,33 +730,54 @@ namespace RSaga3Mod
 
         public static void ParamaterShuffle(System.Random rng, PlayerWorkDefault[] array, int max=-1)
         {
+            PlayerWorkDefault[] array2 = new PlayerWorkDefault[array.Length];
+            Array.Copy(array, array2, array.Length);
+            Dictionary<int, int> charDict = new Dictionary<int, int>();
             int n = max >= 0 ? max : array.Length;
-            for (int i = -1; i < 7; i++)
+            List<int> chars = new List<int>();
+            for (int i = 0; i < n; i++)
             {
-                n = max >= 0 ? max : array.Length;
-                while (n > 1)
+                if (i != 27)
+                    chars.Add(i);
+            }
+            for(int i=0; i < n; i++)
+            {
+                if (i != 27)
                 {
-                    int k = rng.Next(n--);
-                    PlayerWorkDefault temp = array[n];
-
-                    ParameterAssign(array, n, array[k], i);
-                    ParameterAssign(array, k, temp, i);
+                    int r = rng.Next(chars.Count);
+                    int k = chars[r];
+                    charDict[i] = k;
+                    chars.RemoveAt(r);
                 }
             }
-            n = max >= 0 ? max : array.Length;
+
+            for (int i = -1; i < 7; i++)
+            {
+                foreach(int j in charDict.Keys) 
+                {
+                    if (i >= 0)
+                    {
+                        ParameterAssign(array, j, array2[rng.Next(n)], i);
+                    }
+                    else
+                        ParameterAssign(array, j, array2[charDict[j]], i);
+                }
+            }
+
             byte[] mpicopy = new byte[Character.m_pic_no_tbl.Length];
             Array.Copy(Character.m_pic_no_tbl, mpicopy, mpicopy.Length);
 
-            for (int i = 0; i < n; i++)
+            foreach (int i in charDict.Keys)
             {
                 int looks1 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[i]._name);
-                int looks2 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[array[i]._number]._name);
+                int looks2 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[charDict[i]]._name);
 
                 Character.m_pic_no_tbl[looks1] = mpicopy[looks2];
                 Character.m_pic_d[looks1 * 4 + 3] = mpicopy[looks2];
             }
             Character.m_pic_no_tbl[7] = Character.m_pic_no_tbl[108];
             Character.m_pic_d[7 * 4 + 3] = Character.m_pic_no_tbl[108];
+
             for (int j = 33; j < 41; j++)
             {
                 array[j] = array[18];
@@ -860,19 +1003,16 @@ namespace RSaga3Mod
     //    }
     //}
 
-    [HarmonyPatch(typeof(MenuShopItemList), "Initialize")]
+    [HarmonyPatch(typeof(MenuShopItemList), MethodType.Constructor, new Type[] { typeof(MENU_ID) })]
     public class ShopRandomizer
     {
-        public static void Prefix(ref MenuShopItemList __instance)
+        public static void Postfix(MENU_ID type, int[] ___m_syurui, int[] ___m_sub)
         {
-            var mid = __instance.GetType().GetField("m_type", BindingFlags.NonPublic | BindingFlags.Instance);
-            MENU_ID? menu_id = mid.GetValue(__instance) as MENU_ID?;
-            if (Randomizer.randomized && menu_id != null && menu_id == MENU_ID.SHOP_ITEM_BUY_LIST) 
+            if (Randomizer.randomized && type == MENU_ID.SHOP_ITEM_BUY_LIST) 
             { 
-                var prop = __instance.GetType().GetField("m_syurui", BindingFlags.NonPublic | BindingFlags.Instance);
-                int[] items = prop.GetValue(__instance) as int[];
-                for(int i = 0; i < items.Length; i++){
-                    items[i] = Randomizer.shopDict[items[i]];
+                for(int i = 0; i < ___m_syurui.Length; i++){
+                    ___m_syurui[i] = Randomizer.shopDict[___m_syurui[i]];
+                    ___m_sub[i] = DataTable.item_basic_data_table[___m_syurui[i]]._price;
                 }
             }
         }
@@ -903,6 +1043,32 @@ namespace RSaga3Mod
                 }
                 ___m_partyIdx = __state;
             }
+        }
+    }
+
+    //[HarmonyPatch(typeof(MenuListText), "GetText", new Type[3] { typeof(int), typeof(int), typeof(int) })]
+    //public class AttackNameSwap
+    //{
+    //    public static void Prefix(int sheet, ref int id)
+    //    {
+    //        if (Randomizer.randomized && sheet == 8 && Randomizer.skillDict.ContainsKey(id - 1))
+    //        {
+    //            id = Randomizer.skillDict[id - 1] + 1;
+    //        }
+    //    }
+    //}
+
+    [HarmonyPatch(typeof(Character), "Chage")]
+    public class RetainMainCharSprite
+    {
+        public static void Prefix(ref int __state)
+        {
+            __state = GameCore.m_playerWork[GameCore.m_partyWork._tsuikajun[0]]._looks;
+        }
+
+        public static void Postfix(ref int __state)
+        {
+            GameCore.m_playerWork[GameCore.m_partyWork._tsuikajun[0]]._looks = __state;
         }
     }
 
@@ -983,6 +1149,7 @@ namespace RSaga3Mod
         public static Dictionary<int, int> monsterDict = new Dictionary<int, int>();
         public static Dictionary<int, int> shopDict = new Dictionary<int, int>();
         public static Dictionary<int, int> artsDict = new Dictionary<int, int>();
+        public static Dictionary<int, int> skillDict = new Dictionary<int, int>();
         public static bool randomized = false;
         public static string seed = "0";
         public static System.Random rng;
@@ -1004,11 +1171,11 @@ namespace RSaga3Mod
                 monsters.RemoveAt(r);
             }
             List<int> items = new List<int>();
-            for (int i = 0; i < 255; i++)
+            for (int i = 0; i < DataTable.item_basic_data_table.Length; i++)
             {
                 items.Add(i);
             }
-            for (int i = 0; i < 255; i++)
+            for (int i = 0; i < DataTable.item_basic_data_table.Length; i++)
             {
                 int r = rng.Next(items.Count);
                 int k = items[r];
@@ -1027,7 +1194,40 @@ namespace RSaga3Mod
                 artsDict.Add(i, k);
                 arts.RemoveAt(r);
             }
+            arts.Clear();
+            CSVReader.AllDataMake();
+            if (GUIButtons.skillRando)
+            {
+                for (int i = 10; i < 170; i++)
+                {
+                    if (BattleDataList.commandSkillDataList[i].descEng.Length > 2 && !DataTable.skill_player_table[i]._weapon_unique_skill_flag)
+                        arts.Add(i);
+                }
+                List<int> arts2 = new List<int>(arts);
+                for (int i = 0; i < arts2.Count; i++)
+                {
+                    if (BattleDataList.commandSkillDataList[arts2[i]].descEng.Length > 2)
+                    {
+                        int r = rng.Next(arts.Count);
+                        int k = arts[r];
+                        skillDict.Add(arts2[i], k);
+                        arts.RemoveAt(r);
+                    }
+                }
+            }
+
             RandomExtensions.MoveAssign(DataTable.monster_base_data_table, monsterDict);
+            RandomExtensions.PriceAssign(DataTable.item_basic_data_table, shopDict);
+
+            if (GUIButtons.skillRando)
+            {
+                RandomExtensions.SparkAssign(DataTable.skill_hirameki_hasei_data_table, skillDict);
+                //RandomExtensions.Assign(DataTable.skill_hirameki_type_data_table, skillDict);
+                //RandomExtensions.CommandAssign(BattleDataList.commandSkillDataList, skillDict);
+                //RandomExtensions.SkillAssign(DataTable.skill_player_table, skillDict);
+                //RandomExtensions.Assign(BattleSkillDataTable.BattleSkillTable, skillDict);
+            }
+
             //RandomExtensions.Assign(DataTable.enemy_name_table, monsterDict);
             //RandomExtensions.Shuffle(rng, DataTable.item_armor_data_table);
             //RandomExtensions.Shuffle(rng, DataTable.item_weapon_data_table);
