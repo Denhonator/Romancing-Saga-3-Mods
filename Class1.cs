@@ -112,7 +112,7 @@ namespace RSaga3Mod
             prevState = GameCore.m_state;
         }
 
-        public static void Postfix(GameCore __instance)
+        public static void Postfix(GameCore __instance, ref int __state)
         {
             if (Settings.instance.speedrun)
                 return;
@@ -194,15 +194,15 @@ namespace RSaga3Mod
             GUI.Label(new Rect(8, 340, 200f, 64f), message);
             Randomizer.seed = GUI.TextField(new Rect(8, 260, 96f, 32f), Randomizer.seed);
             skillRando = GUI.Toggle(new Rect(8, 340, 96f, 32f), skillRando, "Skills");
-            if(GUI.Button(new Rect(8, 300, 96f, 32f), "Randomize"))
+            if(Randomizer.randomized)
+                GUI.Label(new Rect(8, 300, 96f, 32f), "Randomized!");
+            if (!Randomizer.randomized && GUI.Button(new Rect(8, 300, 96f, 32f), "Randomize"))
             {
                 if (!Randomizer.randomized)
                 {
                     Type staticClassInfo = typeof(DataTable);
                     var staticClassConstructorInfo = staticClassInfo.TypeInitializer;
                     staticClassConstructorInfo.Invoke(null, null);
-
-                    RandomExtensions.ParamaterShuffle(Randomizer.rng, PlayerWorkDefaultDataTable.PlayerWorkDefaultTable, 32);
                 }
                 try
                 {
@@ -242,6 +242,10 @@ namespace RSaga3Mod
                 {
                     message = e.Message;
                 }
+            }
+            if (GUI.Button(new Rect(108, 340, 96f, 32f), "Reload Room"))
+            {
+                GameCore.m_field.m_state = Field.State.MAPJUMP;
             }
             if (GUI.Button(new Rect(108, 300, 96f, 32f), "SaveMapData"))
             {
@@ -728,49 +732,32 @@ namespace RSaga3Mod
             }
         }
 
-        public static void ParamaterShuffle(System.Random rng, PlayerWorkDefault[] array, int max=-1)
+        public static void ParamaterShuffle(System.Random rng, PlayerWorkDefault[] array, Dictionary<int,int> dict, int max=-1)
         {
             PlayerWorkDefault[] array2 = new PlayerWorkDefault[array.Length];
             Array.Copy(array, array2, array.Length);
-            Dictionary<int, int> charDict = new Dictionary<int, int>();
             int n = max >= 0 ? max : array.Length;
-            List<int> chars = new List<int>();
-            for (int i = 0; i < n; i++)
-            {
-                if (i != 27)
-                    chars.Add(i);
-            }
-            for(int i=0; i < n; i++)
-            {
-                if (i != 27)
-                {
-                    int r = rng.Next(chars.Count);
-                    int k = chars[r];
-                    charDict[i] = k;
-                    chars.RemoveAt(r);
-                }
-            }
 
             for (int i = -1; i < 7; i++)
             {
-                foreach(int j in charDict.Keys) 
+                foreach(int j in dict.Keys) 
                 {
                     if (i >= 0)
                     {
                         ParameterAssign(array, j, array2[rng.Next(n)], i);
                     }
                     else
-                        ParameterAssign(array, j, array2[charDict[j]], i);
+                        ParameterAssign(array, j, array2[dict[j]], i);
                 }
             }
 
             byte[] mpicopy = new byte[Character.m_pic_no_tbl.Length];
             Array.Copy(Character.m_pic_no_tbl, mpicopy, mpicopy.Length);
 
-            foreach (int i in charDict.Keys)
+            foreach (int i in dict.Keys)
             {
                 int looks1 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[i]._name);
-                int looks2 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[charDict[i]]._name);
+                int looks2 = GameCore.m_scriptDrive.NpcNameToPicNumber(array[dict[i]]._name);
 
                 Character.m_pic_no_tbl[looks1] = mpicopy[looks2];
                 Character.m_pic_d[looks1 * 4 + 3] = mpicopy[looks2];
@@ -1003,16 +990,49 @@ namespace RSaga3Mod
     //    }
     //}
 
-    [HarmonyPatch(typeof(MenuShopItemList), MethodType.Constructor, new Type[] { typeof(MENU_ID) })]
+    //[HarmonyPatch(typeof(MenuShopItemList), MethodType.Constructor, new Type[] { typeof(MENU_ID) })]
+    //public class ShopRandomizer
+    //{
+    //    public static void Postfix(MENU_ID type, int[] ___m_syurui, int[] ___m_sub)
+    //    {
+    //        if (Randomizer.randomized && type == MENU_ID.SHOP_ITEM_BUY_LIST)
+    //        {
+    //            for (int i = 0; i < ___m_syurui.Length && i < ___m_sub.Length; i++)
+    //            {
+    //                ___m_syurui[i] = Randomizer.shopDict[___m_syurui[i]];
+    //                ___m_sub[i] = DataTable.item_basic_data_table[___m_syurui[i]]._price;
+    //            }
+    //        }
+    //    }
+    //}
+
+    [HarmonyPatch(typeof(MenuManager), "GetNextMenu")]
     public class ShopRandomizer
     {
-        public static void Postfix(MENU_ID type, int[] ___m_syurui, int[] ___m_sub)
+        public static int[] prices = new int[256];
+        public static void Postfix(MENU_ID menu_id, MenuBase __result)
         {
-            if (Randomizer.randomized && type == MENU_ID.SHOP_ITEM_BUY_LIST) 
-            { 
-                for(int i = 0; i < ___m_syurui.Length; i++){
-                    ___m_syurui[i] = Randomizer.shopDict[___m_syurui[i]];
-                    ___m_sub[i] = DataTable.item_basic_data_table[___m_syurui[i]]._price;
+            if (Randomizer.randomized && menu_id == MENU_ID.SHOP_ITEM_BUY_LIST)
+            {
+                var mid = __result.GetType().GetField("m_syurui", BindingFlags.NonPublic | BindingFlags.Instance);
+                int[] m_syurui = mid.GetValue(__result) as int[];
+                mid = __result.GetType().GetField("m_sub", BindingFlags.NonPublic | BindingFlags.Instance);
+                int[] m_sub = mid.GetValue(__result) as int[];
+
+                for (int i = 0; i < m_syurui.Length; i++)
+                {
+                    try
+                    {
+                        m_syurui[i] = Randomizer.shopDict[m_syurui[i]];
+                        m_sub[i] = prices[m_syurui[i]];
+                    }
+                    catch (Exception e)
+                    {
+                        Dictionary<int, int> shopcopy = Randomizer.shopDict;
+                        DataStruct.Item.item_basic_data[] itemcopy = DataTable.item_basic_data_table;
+                        Console.WriteLine("accessed id: " + shopcopy[i]);
+                        Console.WriteLine("itemtable size: " + itemcopy.Length);
+                    }
                 }
             }
         }
@@ -1069,6 +1089,31 @@ namespace RSaga3Mod
         public static void Postfix(ref int __state)
         {
             GameCore.m_playerWork[GameCore.m_partyWork._tsuikajun[0]]._looks = __state;
+        }
+    }
+
+    [HarmonyPatch(typeof(ScriptDrive), nameof(ScriptDrive.DispatchCommand))]
+    public class RetainMainCharSprite2
+    {
+        public static void Prefix(ref int __state)
+        {
+            __state = GameCore.m_playerWork[GameCore.m_partyWork._tsuikajun[0]]._looks;
+        }
+
+        public static void Postfix(ref int __state)
+        {
+            GameCore.m_playerWork[GameCore.m_partyWork._tsuikajun[0]]._looks = __state;
+            //GameCore.m_field.m_player_pic_id = __state;
+        }
+    }
+
+    [HarmonyPatch(typeof(ActionVM), "s_delete")]
+    public class PreventMainCharDeletion
+    {
+        public static void Prefix(ref int ___npcIndex)
+        {
+            if (___npcIndex == 0)
+                ___npcIndex = 1;
         }
     }
 
@@ -1147,6 +1192,7 @@ namespace RSaga3Mod
     public class Randomizer
     {
         public static Dictionary<int, int> monsterDict = new Dictionary<int, int>();
+        public static Dictionary<int, int> charDict = new Dictionary<int, int>();
         public static Dictionary<int, int> shopDict = new Dictionary<int, int>();
         public static Dictionary<int, int> artsDict = new Dictionary<int, int>();
         public static Dictionary<int, int> skillDict = new Dictionary<int, int>();
@@ -1215,9 +1261,31 @@ namespace RSaga3Mod
                     }
                 }
             }
+            List<int> chars = new List<int>();
+            for (int i = 0; i < 32; i++)
+            {
+                if (i != 27)
+                    chars.Add(i);
+            }
+            for (int i = 0; i < 32; i++)
+            {
+                if (i != 27)
+                {
+                    int r = rng.Next(chars.Count);
+                    int k = chars[r];
+                    charDict[i] = k;
+                    chars.RemoveAt(r);
+                }
+            }
 
             RandomExtensions.MoveAssign(DataTable.monster_base_data_table, monsterDict);
             RandomExtensions.PriceAssign(DataTable.item_basic_data_table, shopDict);
+            for(int i = 0; i < 256; i++)
+            {
+                ShopRandomizer.prices[i] = DataTable.item_basic_data_table[i]._price;
+            }
+
+            RandomExtensions.ParamaterShuffle(rng, PlayerWorkDefaultDataTable.PlayerWorkDefaultTable, charDict, 32);
 
             if (GUIButtons.skillRando)
             {
